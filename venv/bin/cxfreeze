@@ -1,0 +1,6 @@
+#!/home/neo/PycharmProjects/FlappyBirdPython/venv/bin/python
+
+from cx_Freeze import main
+
+main()
+
