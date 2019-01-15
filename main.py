@@ -55,14 +55,27 @@ class Pipe:
 
 
 def hit(score):
-    game_display.blit(game_over, (200, 150))
-    large_text = pygame.font.SysFont("comicsansms", 50)
-    text_surf, text_rect = text_objects("Score: {}".format(score), large_text)
-    text_rect.center = (300, 230)
-    game_display.blit(text_surf, text_rect)
+    background_x = 0
+    game_exit = False
+
+    while not game_exit:
+        for event in pygame.event.get():
+            # print(event)
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE) or event.type == pygame.QUIT:
+                game_exit = True
+        rel_background_x = background_x % background_day.get_rect().width
+
+        game_display.blit(background_day, (rel_background_x - background_day.get_rect().width, 0))
+        game_display.blit(background_day, (rel_background_x + background_day.get_rect().width, 0))
+
+        game_display.blit(game_over, (200, 150))
+        large_text = pygame.font.SysFont("comicsansms", 50)
+        text_surf, text_rect = text_objects("Score: {}".format(score), large_text)
+        text_rect.center = (300, 230)
+        game_display.blit(text_surf, text_rect)
+        pygame.display.update()
+        clock.tick(15)
     print("game over final score: {}".format(score))
-    pygame.display.update()
-    time.sleep(2)
     pygame.quit()
     quit()
 
