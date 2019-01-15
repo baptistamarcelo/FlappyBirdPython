@@ -1,3 +1,4 @@
+import random
 import pygame
 
 
@@ -30,31 +31,42 @@ green_pipe = pygame.image.load(image_dir + 'pipe-green.png')
 FPS = 120
 
 
-# class FlappyBird:
-#     def __init__(self, pos_x, pos_y):
-#         self.pos_x = pos_x
-#         self.pos_y = pos_y
-#         self.set_pos(self.pos_x, self.pos_y)
-#
-#     def move_up(self):
-#         FlappyBird(self.pos_x, self.pos_y + 50)
-#
-#     def set_pos(self, pos_x, pos_y):
-#         self.pos_y = pos_y
-#         self.pos_x = pos_x
-#         game_display.blit(yellow_bird_mid, (self.pos_x, self.pos_y))
-
-
 def bird(pos_x, pos_y, bird_type=yellow_bird_mid):
     game_display.blit(bird_type, (pos_x, pos_y))
 
 
-def pipe(pos_x, pos_y, reverse=False):
-    if reverse:
-        new_pipe = pygame.transform.flip(green_pipe, False, True)
-    else:
-        new_pipe = green_pipe
-    game_display.blit(new_pipe, (pos_x, pos_y))
+def text_objects(text, font):
+    text_surface = font.render(text, True, black)
+    return text_surface, text_surface.get_rect()
+
+
+class Pipe:
+    def __init__(self, pipe_1_pos_y):
+        self.pipe_2_pos_y = display_height - (pipe_1_pos_y + 100)
+        self.pipe_1_pos_y = (pipe_1_pos_y * -1)
+        self.pipe_pos_x = 550
+        self.pipe_collision_x = 0
+        self.pipe_collision_y = 0
+
+    def __new__(cls, *args, **kwargs):
+        instance = super(Pipe, cls).__new__(cls)
+        return instance
+
+
+def hit():
+    large_text = pygame.font.SysFont("comicsansms", 115)
+    TextSurf, TextRect = text_objects("You Crashed", large_text)
+    TextRect.center = ((display_width / 2), (display_height / 2))
+    game_display.blit(TextSurf, TextRect)
+
+    while True:
+        for event in pygame.event.get():
+            # print(event)
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        game_display.fill(white)
 
 
 def game_loop():
@@ -63,6 +75,10 @@ def game_loop():
     pos_x = (display_width * 0.1)
     pos_y = (display_height * 0.3)
     change_count = 0
+    pipe_spawn_count = 0
+    pipe_speed = 1
+    pipe_list = []
+    pipe_pos_y_limit = 190
 
     while not game_exit:
         for event in pygame.event.get():
@@ -70,7 +86,7 @@ def game_loop():
                 game_exit = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    change_count += 40
+                    change_count += 15
                     # game_exit = True
 
         rel_background_x = background_x % background_day.get_rect().width
@@ -83,20 +99,40 @@ def game_loop():
         # debug for background placement
         # pygame.draw.line(game_display, (255, 0, 0), (rel_background_x, 0), (rel_background_x, display_height), 3)
 
+        pipe_spawn_count += 1
+
         if change_count > 0:
-            pos_change = -1
+            pos_change = -3
             change_count -= 1
             bird_type = yellow_bird_down
         else:
             pos_change = 1
             bird_type = yellow_bird_up
 
+        if pipe_spawn_count % 250 == 0:
+            pipe_spawn_count = 0
+            pipe = Pipe(random.randint(0, pipe_pos_y_limit))
+            pipe_list.append(pipe)
+
+        for pipe in pipe_list:
+            # debug pipe class
+            # print("pipe 1 / 2: {} / {}".format(pipe.pipe_1_pos_y, pipe.pipe_2_pos_y))
+            game_display.blit(pygame.transform.flip(green_pipe, False, True), (pipe.pipe_pos_x, pipe.pipe_1_pos_y))
+            game_display.blit(green_pipe, (pipe.pipe_pos_x, pipe.pipe_2_pos_y))
+            pipe.pipe_pos_x -= pipe_speed
+            if pipe.pipe_pos_x == -50:
+                pipe_list.remove(pipe)
+
+
+        # debug green pipe position
+        # game_display.blit(pygame.transform.flip(green_pipe, False, True), (500, 0))
         pos_y += pos_change
-        pipe(200, 40, reverse=True)
-        pipe(100, 400, reverse=False)
 
         bird(pos_x, pos_y, bird_type)
         background_x -= 1
+        print("bird 1 / 2: {} / {}".format(pos_x, pos_y))
+        if (pos_x, pos_y) in pipe_list:
+            print("you hit a pipe!")
         pygame.display.update()
         clock.tick(FPS)
 
