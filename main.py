@@ -1,6 +1,6 @@
 import random
 import pygame
-
+import time
 
 pygame.init()
 
@@ -27,6 +27,7 @@ yellow_bird_up = pygame.image.load(image_dir + 'yellowbird-upflap.png')
 yellow_bird_down = pygame.image.load(image_dir + 'yellowbird-downflap.png')
 background_day = pygame.image.load(image_dir + 'background-day.png').convert()
 green_pipe = pygame.image.load(image_dir + 'pipe-green.png')
+game_over = pygame.image.load(image_dir + 'gameover.png')
 
 FPS = 120
 
@@ -53,20 +54,17 @@ class Pipe:
         return instance
 
 
-def hit():
-    large_text = pygame.font.SysFont("comicsansms", 115)
-    TextSurf, TextRect = text_objects("You Crashed", large_text)
-    TextRect.center = ((display_width / 2), (display_height / 2))
-    game_display.blit(TextSurf, TextRect)
-
-    while True:
-        for event in pygame.event.get():
-            # print(event)
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-
-        game_display.fill(white)
+def hit(score):
+    game_display.blit(game_over, (200, 150))
+    large_text = pygame.font.SysFont("comicsansms", 50)
+    text_surf, text_rect = text_objects("Score: {}".format(score), large_text)
+    text_rect.center = (300, 230)
+    game_display.blit(text_surf, text_rect)
+    print("game over final score: {}".format(score))
+    pygame.display.update()
+    time.sleep(2)
+    pygame.quit()
+    quit()
 
 
 def game_loop():
@@ -75,10 +73,11 @@ def game_loop():
     pos_x = (display_width * 0.1)
     pos_y = (display_height * 0.3)
     change_count = 0
-    pipe_spawn_count = 0
+    pipe_spawn_count = 249
     pipe_speed = 1
     pipe_list = []
     pipe_pos_y_limit = 190
+    score = 0
 
     while not game_exit:
         for event in pygame.event.get():
@@ -119,20 +118,44 @@ def game_loop():
             # print("pipe 1 / 2: {} / {}".format(pipe.pipe_1_pos_y, pipe.pipe_2_pos_y))
             game_display.blit(pygame.transform.flip(green_pipe, False, True), (pipe.pipe_pos_x, pipe.pipe_1_pos_y))
             game_display.blit(green_pipe, (pipe.pipe_pos_x, pipe.pipe_2_pos_y))
+            # pygame.draw.line(game_display, (255, 0, 0), (pipe.pipe_pos_x, 0),
+            #                  (pipe.pipe_pos_x, pipe.pipe_1_pos_y + 319), 3)
+            # pygame.draw.line(game_display, (255, 0, 0), (pipe.pipe_pos_x + 50, 0),
+            #                  (pipe.pipe_pos_x + 50, pipe.pipe_1_pos_y + 319), 3)
+            # pygame.draw.line(game_display, (255, 0, 0), (pipe.pipe_pos_x, pipe.pipe_2_pos_y),
+            #                  (pipe.pipe_pos_x, display_height), 3)
+            # pygame.draw.line(game_display, (255, 0, 0), (pipe.pipe_pos_x + 50, pipe.pipe_2_pos_y),
+            #                  (pipe.pipe_pos_x + 50, display_height), 3)
             pipe.pipe_pos_x -= pipe_speed
+
             if pipe.pipe_pos_x == -50:
                 pipe_list.remove(pipe)
 
+            if pipe.pipe_pos_x == pos_x - 1:
+                score += 100
+
+            pipe_range = range(int(pos_x), int(pos_x) + 32)
+            if pipe.pipe_pos_x in pipe_range or pipe.pipe_pos_x + 50 in pipe_range:
+                range_1 = range(pipe.pipe_1_pos_y + 20, pipe.pipe_1_pos_y + 319)
+                range_2 = range(pipe.pipe_2_pos_y - 20, display_height)
+                range_3 = range(pipe.pipe_1_pos_y + 20, pipe.pipe_1_pos_y + 319)
+                range_4 = range(pipe.pipe_2_pos_y - 20, display_height)
+
+                if pos_y in range_1 or pos_y in range_2 or pos_y in range_3 or pos_y in range_4:
+                    hit(score)
 
         # debug green pipe position
         # game_display.blit(pygame.transform.flip(green_pipe, False, True), (500, 0))
         pos_y += pos_change
 
+        # pygame.draw.line(game_display, (255, 0, 0), (pos_x, 0), (pos_x, display_height), 3)
+        # pygame.draw.line(game_display, (255, 0, 0), (pos_x + 32, 0), (pos_x + 32, display_height), 3)
+
         bird(pos_x, pos_y, bird_type)
+        if pos_y <= 0 or pos_y >= display_height - 23:
+            hit(score)
         background_x -= 1
-        print("bird 1 / 2: {} / {}".format(pos_x, pos_y))
-        if (pos_x, pos_y) in pipe_list:
-            print("you hit a pipe!")
+        # print("bird 1 / 2: {} / {}".format(pos_x, pos_y))
         pygame.display.update()
         clock.tick(FPS)
 
